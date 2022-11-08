@@ -1,0 +1,72 @@
+Am luat corpus de aici: https://statmt.org/europarl/ => parallel corpus French-English, 194 MB, 04/1996-11/2011
+Inputul ambelor fisiere e deja sincronizat
+Incarc fisirele line by line, le tokenizez si apoi creez AlignedSentences pe care le feed catre IBMModel1
+Apoi, dat fiind ca am deja matricea creata in acest punct, pot folosi:
+https://www.nltk.org/api/nltk.translate.phrase_based.html#nltk.translate.phrase_based.extract
+https://www.nltk.org/_modules/nltk/translate/phrase_based.html
+Folosind https://www.cs.cornell.edu/courses/cs5740/2017sp/lectures/09-pbt.pdf la pagina 14/51 este explicat faptul ca:
+A phrase-pair (??,??) is consistent if: 
+  – There is at least one word in ?? aligned to a word in ??
+  – There are no words in ?? aligned to words outside ??
+  – There are no words in ?? aligned to words outside ??
+
+Imi ramane taskul
+Perform symmetrization on each pair of sentences, to enhance the alignments. You will have lot of different situations which don’t match the simple intersection/union rule, for which you will need to make explainable decisions.
+
+
+In ntlk sunt 5 modele IBM - 1, 2, 3, 4, 5.
+`IBMModel1` => `Lexical translation model that ignores word order`
+`IBMModel2` => `Lexical translation model that considers word order`
+`IBMModel3` => `Translation model that considers how a word can be aligned to multiple words in another language`
+`IBMModel4` => `Translation model that reorders output words based on their type and their distance from other related words in the output sentence`
+`IBMModel5` => `Translation model that keeps track of vacant positions in the target sentence to decide where to place translated words`
+
+Primele doua modele au timpi decenti pe un input considerabil de mare (`https://statmt.org/europarl/ => parallel corpus French-English, 194 MB, 04/1996-11/2011`) dar de la modelul `3` in sus (cel de la care pot incepe sa consider partea de `symmetrization`) insa incepand cu al treilea timpii cresc considerabil - acest lucru este descris intr-un issue din 2017 care nu pare ca a fost rezolvat pana in prezent - https://github.com/nltk/nltk/issues/1695.
+
+Datorita faptului ca m-am incapatanat initial sa nu folosesc GIZA++, nu am reusit sa parsez intreg corpusul de mai sus in model 3 ci am folosit pana la urma doar cateva fraze de test.
+
+Din cursul 5 - https://profs.info.uaic.ro/~dtrandabat/pages/courses/mt2022-2023/MT05-2022-2023.pdf:
+```
+Symmetrized Word Alignment using IBM Models
+Alignments produced by IBM models are asymmetrical: words have at most one connection source, but target words may have many connections. To improve quality, use symmetrization heuristic:
+
+1. Perform two separate alignments, one in each different translation direction. 
+2. Take intersection of links as starting point.
+3. Add neighbouring links from union until all words are covered. 
+```
+
+Daca am inteles bine din ntlk IBM Model 3, symmetrization-ul se face luand translation si alignment probabilities din IBM Model 2  peste care se aplica n iterations de training pentru fiecare aligned sentence:
+- Sample the alignment space
+- Record the most probable alignment
+- # E step (a): Compute normalization factors to weigh counts
+- # E step (b): Collect counts
+Iar la final:
+- # M step: Update probabilities with maximum likelihood estimates
+   # If any probability is less than MIN_PROB, clamp it to MIN_PROB
+Sampling the aligment space are urmatorii pasi folosindu-se de hill climb:
+```
+Sample the most probable alignments from the entire alignment space
+
+        First, determine the best alignment according to IBM Model 2.
+        With this initial alignment, use hill climbing to determine the
+        best alignment according to a higher IBM Model. Add this
+        alignment and its neighbors to the sample set. Repeat this
+        process with other initial alignments obtained by pegging an
+        alignment point.
+
+        Hill climbing may be stuck in a local maxima, hence the pegging
+        and trying out of different alignments.
+```
+
+Drept exemple si referinte am avut:
+http://emjotde.github.io/publications/pdf/mjd2011siis.pdf
+https://www.cs.cornell.edu/courses/cs5740/2017sp/lectures/09-pbt.pdf
+https://patents.google.com/patent/US20110307245A1/en
+https://www.researchgate.net/publication/221501497_SyMGiza_Symmetrized_Word_Alignment_Models_for_Statistical_Machine_Translation_httpsgithubcomemjotdesymgiza-pp
+https://www.researchgate.net/publication/228807412_Symmetric_word_alignments_for_statistical_machine_translation
+http://roeeaharoni.com/mt_course_2020/03_smt.pdf
+https://www.nltk.org/_modules/nltk/translate/phrase_based.html
+https://www.nltk.org/api/nltk.translate.phrase_based.html#nltk.translate.phrase_based.extract
+https://github.com/chinchia/NLP-Labs/blob/78becbcd4f2fe4be52b112406f6d53119c98ca9d/Lab11_Paraphrase/consistent_block.py
+https://github.com/bmeaut/python_nlp_2018_spring/blob/fdcaedf198746d6f4fa0189db9fe844f2f2f9a7a/course_material/12_Machine_Translation/12_Machine_Translation_lecture.pdf
+https://github.com/bmeaut/python_nlp_2018_spring/blob/fdcaedf198746d6f4fa0189db9fe844f2f2f9a7a/course_material/12_Machine_Translation/12_Machine_Translation_lab_solutions.ipynb
