@@ -70,3 +70,13 @@ https://www.nltk.org/api/nltk.translate.phrase_based.html#nltk.translate.phrase_
 https://github.com/chinchia/NLP-Labs/blob/78becbcd4f2fe4be52b112406f6d53119c98ca9d/Lab11_Paraphrase/consistent_block.py
 https://github.com/bmeaut/python_nlp_2018_spring/blob/fdcaedf198746d6f4fa0189db9fe844f2f2f9a7a/course_material/12_Machine_Translation/12_Machine_Translation_lecture.pdf
 https://github.com/bmeaut/python_nlp_2018_spring/blob/fdcaedf198746d6f4fa0189db9fe844f2f2f9a7a/course_material/12_Machine_Translation/12_Machine_Translation_lab_solutions.ipynb
+
+
+Removed the data set:
+remote: error: Trace: 12ef40e301286e0f47192520a3fc211b080e377985f800e6d7189b25f22f4f4a
+remote: error: See http://git.io/iEPt8g for more information.
+remote: error: File Lab05/fr-en/europarl-v7.fr-en.fr2 is 330.85 MB; this exceeds GitHub's file size limit of 100.00 MB
+remote: error: File Lab05/fr-en/europarl-v7.fr-en.en2 is 287.56 MB; this exceeds GitHub's file size limit of 100.00 MB
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
+
+Files can be found in an archive at https://statmt.org/europarl
